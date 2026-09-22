@@ -1,0 +1,27 @@
+# Secrets
+.env
+*.key
+secrets/
+
+# Data never goes into Git (see docs/04-infrastructure.md)
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.duckdb
+*.parquet
+
+# Models
+models/*.onnx
+models/*.bin
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
