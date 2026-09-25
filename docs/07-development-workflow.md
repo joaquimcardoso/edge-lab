@@ -192,6 +192,7 @@ Given Phase 1's exit criterion ("Audit report: reconstructable-event rate and fa
 5. **Exchange-calendar integration** (added by the Trading Expert review after STORY-003, [06-trading-system-audit-v1.md](06-trading-system-audit-v1.md#story-003--8-k-normaliser-and-event-store-2026-09-25)): trading-day/session-date resolution, holidays, half-days, DST. Required before item 6, since both STORY-003's deferred `session_date` and item 6's rolling-window features need the same dependency; not required before item 4, which is why item 4 shipped first. ([STORY-005](../stories/STORY-005-exchange-calendar.md))
 6. Feature builder: ATR%, beta, ADV — point-in-time only, per §5. Depends on item 5. (STORY-006)
 7. Feed-latency audit harness (Gate 0 for [EXP-002](experiments/daily/EXP-002-intraday-continuation.md)). (STORY-007)
+8. Pi collector entrypoint + deploy scaffold, Gate 0 scope: config loader, real HttpClient, scripts/collect_premarket_8k.py, systemd units + install/uninstall scripts. ([STORY-008](../stories/STORY-008-pi-collector-entrypoint.md), TRADING_REVIEWED)
 
 This is a starting order, not a frozen backlog — Story Agent still freezes each one individually before development starts, and the Trading Expert Agent can reprioritise after any of them.
 

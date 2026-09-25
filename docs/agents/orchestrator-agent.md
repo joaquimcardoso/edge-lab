@@ -20,7 +20,9 @@ Runs the full seven-gate pipeline (Story → Developer → Reviewer → Unit Tes
 
 ## Known limitation: deployment target
 
-[07-development-workflow.md](../07-development-workflow.md) and the Integrator Agent's spec describe "deploy" as the research pipeline going live (Pi collectors — not live capital). This orchestrator can merge, tag and prepare a release in the git repository, but it cannot reach the physical Raspberry Pi described in [04-infrastructure.md](../04-infrastructure.md) unless that machine is directly reachable from wherever the orchestrator is running. Until that connection exists, "deploy" here means the repository is ready to deploy — actually rolling it onto the Pi remains a manual step, or a future story that automates it (e.g. over SSH).
+[07-development-workflow.md](../07-development-workflow.md) and the Integrator Agent's spec describe "deploy" as the research pipeline going live (Pi collectors — not live capital). This orchestrator can merge, tag and prepare a release in the git repository, but it cannot reach the physical Raspberry Pi described in [04-infrastructure.md](../04-infrastructure.md) unless that machine is directly reachable from wherever the orchestrator is running. Until that connection exists, "deploy" here means the repository is ready to deploy — actually rolling it onto the Pi remains a manual step.
+
+STORY-008 introduced the [Deployment Agent](deployment-agent.md), whose spec covers everything needed to produce that installable form (scripts/, deploy/ systemd units, install/uninstall scripts) — this orchestrator delegates to it for that stage rather than improvising deployment wiring itself. The Deployment Agent has the same physical-reach limitation: it produces and tests a release for installability, but running `deploy/install.sh` on the actual device is still a human (or a future SSH-capable agent) with hands on the Pi.
 
 ## Outputs
 
