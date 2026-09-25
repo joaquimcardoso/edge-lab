@@ -62,7 +62,7 @@ Costs include the EUR/USD conversion actually charged by the broker account, unl
 
 ## Controls
 
-Each experiment defines a control group that isolates the variable being tested (e.g. same gap size without an identified event). Control labels describe what is known, not what is assumed: `NO_IDENTIFIED_ANALYST_EVENT`, not `NO_CATALYST`. A manual audit of ~200 control observations estimates the hidden-event rate.
+Each experiment defines a control group that isolates the variable being tested (e.g. same gap size without an identified event). Control labels describe what is known, not what is assumed: `NO_IDENTIFIED_ANALYST_EVENT`, not `NO_CATALYST`. A manual audit of ~200 control observations estimates the hidden-event rate. **A control group is usable as a benchmark only if its estimated hidden-event rate is below a frozen threshold (proposed default: 15%)** — otherwise "no identified event" mostly means "our classifier missed it," not a genuine absence of a catalyst.
 
 ## Contamination rules
 
@@ -72,6 +72,20 @@ Each experiment defines a control group that isolates the variable being tested 
 ## Near misses
 
 Candidates that fail exactly one filter are logged with their outcome. They are never used to change a frozen spec. They may motivate a new experiment.
+
+## Multiple testing across experiments
+
+Freezing a spec before running it stops *within-experiment* hindsight. It does not stop *across-experiment* data mining: running EXP-001, EXP-003, EXP-004, EXP-V01 and their sub-variants and reporting only the ones that pass is the same problem at the program level, even when every individual spec was honestly frozen.
+
+| Dataset | Allowed use |
+|---|---|
+| Development | hypothesis formation, exploratory checks before a spec is written |
+| Validation | the frozen spec's primary test — ACCEPT/REJECT/INCONCLUSIVE is decided on this |
+| Final holdout | untouched until validation has already produced a decision; used once, for confirmation only |
+
+A spec may only be re-run against the validation dataset while still DRAFT. Once FROZEN, a result — pass or fail — is final for that spec; a different outcome requires a new experiment ID or spec version. The final holdout is opened at most once per accepted strategy, only after it has already passed on the validation set; opening it earlier, or more than once, invalidates the confirmation.
+
+Open design item, not yet operational — see [06 Trading System Audit](06-trading-system-audit-v1.md).
 
 ## The five questions
 

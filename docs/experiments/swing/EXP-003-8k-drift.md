@@ -34,6 +34,8 @@ The filing does not reveal direction. Direction comes from the market reaction.
 - Universe per [swing strategy](../../strategies/swing.md)
 - For 003b: exclude filings within ±2 sessions of an item 2.02 filing
 
+**Open item:** as in [EXP-001](../swing/EXP-001-analyst-drift.md#exclusions), an event landing inside the 10-session hold (not just near entry) is not yet excluded or isolated — flag with `event_during_hold` and report separately until frozen.
+
 ## Entry and exit
 
 Entry at open of S+1. Exit at close of the 10th session after entry (primary). 5/20 secondary.

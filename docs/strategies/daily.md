@@ -31,6 +31,12 @@ Intraday continuation: the reaction to pre-market information may be incomplete 
 
 These constraints make the acceptance bar for daily higher than for swing.
 
+## Live-phase considerations
+
+- Because positions are closed the same session, there is no overnight gap risk to size for (unlike swing); risk per trade is bounded by the invalidation level used at entry.
+- Daily and swing can hold positions on the same day and draw on the same €1,000; concurrent exposure across strategies is governed by the account-level limits in [00 Vision](../00-vision.md#account-level-risk-limits-phase-5), not sized independently per strategy.
+- Execution is manual, at the US open (typically 14:30 Lisbon).
+
 ## Experiments
 
 - [EXP-002 Intraday continuation](../experiments/daily/EXP-002-intraday-continuation.md)

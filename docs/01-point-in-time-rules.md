@@ -19,11 +19,13 @@ Every event and every derived observation carries these fields. All timestamps a
 ## 2. Rule for `known_at`
 
 - **Live-collected data:** `known_at = first_seen_at`.
-- **Historical data with a reliable timestamp** (e.g. SEC EDGAR acceptance time): `known_at = published_at + declared_feed_lag`, where `declared_feed_lag` comes from the latency audit (see [EXP-002](experiments/daily/EXP-002-intraday-continuation.md)).
+- **Historical data with a reliable timestamp** (e.g. SEC EDGAR acceptance time): `known_at = published_at + declared_feed_lag`, where `declared_feed_lag` is a conservative percentile (not the median or mean) of the observed latency distribution for that source × event type × market session, from the latency audit (see [EXP-002](experiments/daily/EXP-002-intraday-continuation.md)). The audit stores the full distribution, not one summary number — a source with a 20s median but a 2-minute p95 is not safely represented by its median alone.
 - **Historical data with a date but no time:** the event is assumed to be known only **after the close of the event date**. See rule 4.
 - **Historical data with neither:** excluded.
 
 A decision at time *t* may only use records with `known_at <= t`.
+
+`known_at` gates what a backtest is allowed to see; it does not by itself mean a human operator could have acted on it. For Daily, where execution is manual and same-session, [Gate 0](experiments/daily/EXP-002-intraday-continuation.md#gate-0--feed-latency-runs-first) additionally requires the full processing chain — `source_time → first_seen_at → normalized_at → classified_at → signal_generated_at → operator_seen_at → order_submitted_at → fill_at` — to be logged for every live/paper signal, so the gap between "the system knew" and "a person could have traded" is measured, not assumed away.
 
 ## 3. Session mapping
 
@@ -49,7 +51,7 @@ This loses part of any real effect. It is the price of avoiding look-ahead.
 ## 5. Derived features
 
 - ATR, beta, average volume and any rolling statistic use data **through the previous close** (t-1).
-- Beta is estimated from a trailing window ending at t-1, never from the full sample.
+- Beta is estimated from a trailing window ending at t-1, never from the full sample. **Proposed default (not yet frozen):** 252 trading days, minimum 60 observations required, zero-alpha market model (`AR = R_stock − β·R_market`, no intercept), matching the formula already used in [05 Experiment protocol](05-experiment-protocol.md).
 - Sector classification is **as of the event date**. The 2018 GICS reclassification moved several large companies (including Meta and Alphabet) to Communication Services, and sector ETFs such as XLC did not exist before then. Keep a dated sector history and a documented fallback for early periods.
 - Fundamentals are keyed by the **filing date** (`filed` in SEC XBRL data), not by the fiscal period end.
 
@@ -84,6 +86,20 @@ Language models have a training cutoff and may "know" what happened after histor
 ## 10. Live-data freshness (Phase 3+)
 
 For live signals and manual execution, prices shown to the operator must include currency, exchange and timestamp, and be verified against a second source when used for an order. Signals built on data older than the strategy's freshness threshold are suppressed, not downgraded.
+
+## 11. Amendments and revisions
+
+Filings and data points can be amended or corrected after first publication (e.g. an 8-K amendment). The **first-filed version is the only one usable at its own `known_at`**; a later amendment gets its own, later `known_at` and its own record. A backtest must never substitute a cleaner or corrected later version into an earlier decision point — that is look-ahead through data quality, not through data existence.
+
+## 12. Corporate actions
+
+Splits, dividends (including special dividends) and symbol/ticker changes affect price series, returns, gaps and ATR, and can change whether a security matches universe filters on a given date. This must be specified before Phase 1 collection begins:
+
+- Which price series is primary for return/gap/ATR calculations — **proposed default: adjusted close for returns and rolling statistics; raw (unadjusted) close for gap and same-day price-level filters**, since a gap computed on a split- or ex-dividend-adjusted close can manufacture or hide a gap that never existed intraday.
+- How a split/dividend/symbol change occurring inside an open position's holding window is handled (position size, stop/target levels, ATR normalisation).
+- How `security` and universe membership are evaluated around a symbol change, so a renamed ticker isn't treated as delisted on one side and newly listed on the other.
+
+Open item, not yet frozen — see [06 Trading System Audit](06-trading-system-audit-v1.md).
 
 ## Checklist for every new feature
 

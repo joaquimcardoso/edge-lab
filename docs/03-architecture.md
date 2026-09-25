@@ -32,6 +32,81 @@
 
 From Phase 3 onward, a **signal service**, a **risk module** and a **paper portfolio** sit after the experiments. There is no execution engine ([ADR-0005](adr/0005-manual-execution-xtb.md)).
 
+## Diagrams
+
+Rendered images: [pipeline.png](diagrams/pipeline.png), [lifecycle.png](diagrams/lifecycle.png). Source below (GitHub/GitLab render these Mermaid blocks natively; edit the source, not the PNGs — the PNGs are a convenience snapshot, not the source of truth).
+
+### Data & experiment pipeline
+
+```mermaid
+flowchart TD
+    subgraph COL["Collectors — Raspberry Pi, scheduled"]
+        direction LR
+        C1[edgar_8k]
+        C2[edgar_form4]
+        C3[xbrl_facts]
+        C4[prices_daily]
+        C5[analyst_actions]
+        C6[rss_news]
+        C7[gdelt]
+    end
+
+    COL --> RAW[("Raw store — immutable<br/>payload + source + retrieved_at<br/>+ first_seen_at + sha256")]
+
+    RAW --> NORM["Normalisers<br/>entity linking · dedup · classification<br/>(closed event taxonomy, ADR-0001: rules decide)"]
+
+    NORM --> EVT[("Event store<br/>known_at per rule 01-§2")]
+    NORM --> PRC[("Price store")]
+    NORM --> FUN[("Fundamentals store<br/>keyed by filing date")]
+
+    EVT --> FEAT["Feature builder — point-in-time only<br/>ATR%, beta (252d, zero-alpha), ADV,<br/>sector as-of date"]
+    PRC --> FEAT
+    FUN --> FEAT
+
+    FEAT --> SW["Swing experiments<br/>EXP-001 analyst drift · EXP-003 8-K drift · EXP-004 news"]
+    FEAT --> DL["Daily experiments<br/>EXP-002 intraday continuation → EXP-002B executable price"]
+    FEAT --> VL["Value experiments<br/>EXP-V01 quality-value-insider"]
+
+    SW --> EVAL["Evaluation<br/>abnormal returns · 3 cost scenarios ·<br/>clustered stats · controls · subperiods"]
+    DL --> EVAL
+    VL --> EVAL
+
+    EVAL --> OUT{"ACCEPT / REJECT /<br/>INCONCLUSIVE"}
+    OUT --> REP["Reports + decision log → Git"]
+
+    OUT -->|ACCEPT only| PAPER["Phase 3+: signal service,<br/>risk module, paper portfolio"]
+    PAPER --> MANUAL["Manual execution on XTB<br/>no automated order engine — ADR-0005"]
+    MANUAL --> RISK["Account-level risk limits<br/>drawdown stop · position caps ·<br/>sector/event concentration caps<br/>(00-vision.md, Phase 5)"]
+
+    classDef store fill:#eee,stroke:#999,color:#111;
+    classDef gate fill:#fff3cd,stroke:#b8860b,color:#111;
+    class RAW,EVT,PRC,FUN store;
+    class OUT gate;
+```
+
+### Experiment lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT
+    DRAFT --> DRAFT: parameters can change (development data only)
+    DRAFT --> FROZEN: spec + config + acceptance criteria committed & tagged in Git
+    FROZEN --> RUNNING: run once against the validation dataset
+    RUNNING --> ACCEPT: passes all 5 questions
+    RUNNING --> REJECT: fails one or more (a valid outcome)
+    RUNNING --> INCONCLUSIVE: sample too small / result unstable
+    ACCEPT --> HOLDOUT: final holdout, opened once, confirmation only
+    HOLDOUT --> [*]
+    REJECT --> [*]
+    INCONCLUSIVE --> NEWSPEC: more data or a narrower question, never looser criteria
+    NEWSPEC --> DRAFT: new experiment ID or spec version
+
+    note right of FROZEN
+        Any change after freezing is a new
+        experiment, never a silent edit
+    end note
+```
+
 ## Components
 
 | Component | Responsibility | Runs on |

@@ -44,6 +44,9 @@ The strategies never share optimised parameters and are never merged into a sing
 | [03 Architecture](docs/03-architecture.md) | Components, data model, decision log |
 | [04 Infrastructure](docs/04-infrastructure.md) | Raspberry Pi 5 deployment, storage, scheduling, backups |
 | [05 Experiment protocol](docs/05-experiment-protocol.md) | Lifecycle, metrics, statistics, reporting |
+| [06 Trading system audit v1](docs/06-trading-system-audit-v1.md) | Consolidated external review findings; resolved vs. open items gating Phase 1 |
+| [07 Development workflow](docs/07-development-workflow.md) | Agent roles, story lifecycle and gates used to build every feature |
+| [08 Credentials](docs/08-credentials.md) | How to obtain and where to store any API key a source needs — checked before a collector is written |
 | [Strategies](docs/strategies/) | Swing, daily and value strategy definitions |
 | [Experiments](docs/experiments/) | Individual hypothesis specifications |
 | [ADRs](docs/adr/) | Architecture decision records |

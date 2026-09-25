@@ -24,6 +24,7 @@ Two variants share the hypothesis and differ only in timing data:
 
 - Events within ±2 sessions of an 8-K item 2.02 filing (earnings).
 - Securities outside the universe on the event date.
+- **Open item:** the rule above only covers earnings near *entry*. It does not yet cover an earnings release, another qualifying event, or a corporate action landing *inside* the 10-session hold itself (e.g. Monday upgrade, Thursday earnings). Until frozen, such observations are flagged with an `event_during_hold` attribute and reported separately, never silently pooled with clean observations. See [06 Trading System Audit](../../06-trading-system-audit-v1.md).
 
 ## Filters
 
@@ -48,6 +49,7 @@ Fixed: close of the 10th session after entry (primary). 5 and 20 sessions are re
 
 - **Primary:** 10-session beta-adjusted abnormal return.
 - Secondary: sector-adjusted return; AR / ATR%20; win rate; median; profit factor; calendar-time portfolio drawdown.
+- **Diagnostic, not used for acceptance:** for events present in both the EXP-001F and EXP-001T samples, the difference in captured 10-session abnormal return between the D+2 (date-only) entry and the S+1 (timestamped) entry. This turns the known "two-session window forgoes early drift" limitation into a measured number instead of an assumption.
 
 ## Controls
 

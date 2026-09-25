@@ -28,5 +28,5 @@ Post-event drift: after positive new information, prices may continue to adjust 
 ## Live-phase considerations
 
 - Risk per trade is defined by distance to the invalidation level and a gap scenario, not only the stop distance.
-- With ~€1,000 of capital, the number of concurrent positions is small; correlation between positions (same sector, same event day) must be capped.
+- With ~€1,000 of capital, the number of concurrent positions is small; correlation between positions (same sector, same event day) is capped by the account-level limits in [00 Vision](../00-vision.md#account-level-risk-limits-phase-5), not decided per trade.
 - Execution is manual, near the US open (typically 14:30 Lisbon) or with limit orders placed in advance.

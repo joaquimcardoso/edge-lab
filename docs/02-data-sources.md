@@ -2,6 +2,20 @@
 
 Free sources first ([ADR-0002](adr/0002-free-data-first.md)). Each source is trusted only for what it can actually support.
 
+## Source verification (2026-09-25)
+
+Every free source below was checked against its own current terms/status before any collector is built — not assumed from when this document was first drafted. Findings:
+
+- **SEC EDGAR:** confirmed free, no registration or API key, 10 req/s rate limit, descriptive `User-Agent` required. Matches this doc; source: sec.gov's own EDGAR access page.
+- **yfinance:** confirmed still free and maintained, but explicitly unofficial — real risk of `429` throttling and silent breakage under load, consistent with this doc's existing "treat as fragile" stance. No change needed; the caution was already correctly calibrated.
+- **Stooq:** confirmed free, but **no official API** — access is either a manual CSV download from the website or the `pandas-datareader` `stooq` reader (capped at roughly 5 years of history). A generic crawl of `stooq.com/db/` was blocked by `robots.txt`. Collectors must respect that — poll only the specific download endpoints people already use programmatically, at a conservative rate, never crawl the site. Description tightened in the table below.
+- **Press-release wire RSS (PR Newswire, GlobeNewswire):** confirmed free public RSS feeds exist with broad topic/industry coverage and no paywall language found. Terms for automated polling aren't explicitly published; treat as free-to-read but keep the existing "respect rate limits, no scraping beyond RSS" rule.
+- **Business Wire:** offers RSS/Atom/NX/FTP feeds per its own feed-options page, with a paid "PressPass Account" for extras beyond basic feeds — base RSS appears free. Its own site was returning a maintenance page during this check, a live reminder that this source is exactly as fragile as this doc already assumes ("forward only, noisy").
+- **GDELT 2.0:** confirmed "100% free and open" directly from the GDELT Project's own site, via raw files, BigQuery, or its JSON APIs.
+- **New candidate, not yet integrated — Finnhub free news API:** see [below](#candidate-finnhub-free-news-api-not-yet-integrated).
+
+Verdict: every source this document currently relies on for the MVP has a genuine free-forever option; nothing here requires a subscription, and nothing needs to be built from scratch to cover the gap a "news" source fills — SEC (official events), GDELT (broad news mentions) and the wire RSS feeds already give redundant free coverage, with Finnhub's free news API as a documented, structured backup if wire RSS proves too unreliable once Phase 1's audit has real data on it.
+
 ## Summary
 
 | Source | Used for | Timestamp quality | Main limitation |
@@ -11,7 +25,7 @@ Free sources first ([ADR-0002](adr/0002-free-data-first.md)). Each source is tru
 | **SEC XBRL `companyfacts`** | Fundamentals | `filed` date per value | Tag inconsistencies across companies |
 | **SEC `company_tickers.json`** | Ticker ↔ CIK ↔ name mapping, entity linking | Current snapshot only | Needs its own dated history |
 | **yfinance** | Daily OHLCV, analyst upgrades/downgrades, sector ETFs | Date only for analyst actions | Unofficial; can break; weak coverage of delisted names |
-| **Stooq** | Backup daily prices | Daily | Coverage varies |
+| **Stooq** | Backup daily prices | Daily | No official API — manual CSV or `pandas-datareader` (~5y history cap); respect `robots.txt` |
 | **Press-release wire RSS** (PR Newswire, Business Wire, GlobeNewswire) | Primary corporate announcements | `first_seen_at` (own) | Forward only |
 | **Yahoo Finance / Nasdaq RSS per ticker** | Headlines, incl. analyst actions reported by press | `first_seen_at` (own) | Forward only; noisy |
 | **GDELT 2.0** | Historical and live news mentions | 15-minute capture time | Generic, noisy for finance |
@@ -43,6 +57,13 @@ Free sources first ([ADR-0002](adr/0002-free-data-first.md)). Each source is tru
 
 - Live: poll the 15-minute update files and keep only rows linked to universe tickers.
 - History: filter in the public GDELT dataset on BigQuery (free tier) from the laptop, then download the reduced result. Never backfill raw GDELT on the Pi.
+
+## Candidate: Finnhub free news API (not yet integrated)
+
+Verified 2026-09-25: Finnhub offers a free-forever tier (60 calls/minute, no credit card) that includes a company-news and general-market-news endpoint — a documented, structured JSON API rather than an RSS scrape, which is easier to build clean `known_at`/`first_seen_at` semantics around. Not yet added as a collector. Before it is:
+
+- Verify Finnhub's free-tier terms of service specifically permit personal research and eventual algorithmic-trading use — free tiers on data APIs sometimes carve out commercial or trading use even when the tier itself is described as free.
+- If terms are clean, it slots in as a redundant/backup source for press-release-style events, not a replacement for the SEC-timestamped sources this repository already prioritises.
 
 ## Paid upgrade path (not active)
 
