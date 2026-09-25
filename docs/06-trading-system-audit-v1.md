@@ -93,3 +93,11 @@ One entry per DEPLOYED story, per [Trading Expert Agent](agents/trading-expert-a
 
 **Decision: PROCEED.** Item 4a (exchange-calendar integration) stays next, ahead of STORY-005 (feature builder), per the STORY-003 review.
 
+### STORY-005 — Exchange-calendar integration (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes. `is_trading_day`/`next_trading_day`/`compute_session_date` are backed by a real, maintained NYSE calendar library rather than a hand-rolled weekday check, and STORY-003's carried-forward open item (`session_date` left `None`) is now closed — the `edgar_8k` normaliser computes it correctly. 74/74 tests green (15 new, 2 intentionally updated to their now-correct computed values, 57 unchanged).
+2. **Does anything here change the next story's priority?** No. STORY-006 (feature builder) was already gated on this story per the STORY-003 review and is now unblocked — no new information here changes what comes after it.
+3. **Should the backlog pause rather than continue?** No blocking concern. One thing worth naming: this story's scope boundary explicitly deferred half-day-aware intraday cutoffs (a half day still resolves as a full trading day for session-date purposes) — fine for `session_date` resolution, but Daily's Gate 0 (STORY-007, feed-latency audit) will need to handle early closes precisely once it's built. Not a blocker now; flagged so it isn't a surprise then.
+
+**Decision: PROCEED.** STORY-006 (feature builder) may leave DRAFT.
+
