@@ -35,6 +35,7 @@ class CollectorConfig:
     reports_dir: Path
     universe_path: Path
     log_dir: Path
+    price_db_path: Path
 
 
 def _require(env: Mapping[str, str], name: str) -> str:
@@ -78,6 +79,9 @@ def load_collector_config(*, env: Optional[Mapping[str, str]] = None) -> Collect
         resolved_env, "EDGELAB_UNIVERSE_PATH", Path("config") / "universe.csv"
     )
     log_dir = _optional_path(resolved_env, "EDGELAB_LOG_DIR", data_dir / "logs")
+    price_db_path = _optional_path(
+        resolved_env, "EDGELAB_PRICE_DB_PATH", data_dir / "price_daily.db"
+    )
 
     return CollectorConfig(
         sec_user_agent=sec_user_agent,
@@ -87,6 +91,7 @@ def load_collector_config(*, env: Optional[Mapping[str, str]] = None) -> Collect
         reports_dir=reports_dir,
         universe_path=universe_path,
         log_dir=log_dir,
+        price_db_path=price_db_path,
     )
 
 

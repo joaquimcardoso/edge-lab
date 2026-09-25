@@ -30,6 +30,7 @@ def test_build_and_write_agrees_with_direct_score_day(tmp_path):
         reports_dir=data_dir / "reports",
         universe_path=tmp_path / "universe.csv",
         log_dir=data_dir / "logs",
+        price_db_path=data_dir / "price_daily.sqlite3",
     )
     config.data_dir.mkdir(parents=True)
     config.universe_path.write_text("ticker,cik\nAAPL,320193\n")

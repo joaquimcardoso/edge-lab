@@ -28,6 +28,7 @@ def test_collect_premarket_8k_end_to_end(tmp_path):
         reports_dir=data_dir / "reports",
         universe_path=tmp_path / "universe.csv",
         log_dir=data_dir / "logs",
+        price_db_path=data_dir / "price_daily.sqlite3",
     )
     config.data_dir.mkdir(parents=True)
 

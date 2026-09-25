@@ -83,3 +83,15 @@ def test_load_notification_config_disabled_when_env_empty():
 def test_load_notification_config_disabled_when_only_one_var_present(present_var):
     config = load_notification_config(env={present_var: "some-value"})
     assert config.telegram_enabled is False
+
+
+def test_load_collector_config_derives_price_db_path_by_default():
+    config = load_collector_config(env=_base_env())
+    assert config.price_db_path == Path("/tmp/edgelab-data/price_daily.db")
+
+
+def test_load_collector_config_price_db_path_override_takes_precedence():
+    config = load_collector_config(
+        env=_base_env(EDGELAB_PRICE_DB_PATH="/other/prices.db")
+    )
+    assert config.price_db_path == Path("/other/prices.db")

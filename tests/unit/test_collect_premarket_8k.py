@@ -32,6 +32,7 @@ def _config(tmp_path) -> CollectorConfig:
         reports_dir=data_dir / "reports",
         universe_path=tmp_path / "universe.csv",
         log_dir=data_dir / "logs",
+        price_db_path=data_dir / "price_daily.sqlite3",
     )
 
 
