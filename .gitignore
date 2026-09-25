@@ -19,6 +19,7 @@ models/*.bin
 __pycache__/
 *.pyc
 .venv/
+.venv-*/
 .pytest_cache/
 
 # OS / editors
