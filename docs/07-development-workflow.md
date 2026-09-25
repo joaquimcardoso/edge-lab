@@ -194,6 +194,7 @@ Given Phase 1's exit criterion ("Audit report: reconstructable-event rate and fa
 7. Feed-latency audit harness (Gate 0 for [EXP-002](experiments/daily/EXP-002-intraday-continuation.md)). (STORY-007)
 8. Pi collector entrypoint + deploy scaffold, Gate 0 scope: config loader, real HttpClient, scripts/collect_premarket_8k.py, systemd units + install/uninstall scripts. ([STORY-008](../stories/STORY-008-pi-collector-entrypoint.md), TRADING_REVIEWED)
 9. Daily operations report artifact: per-day Markdown + JSON report over collection counts, cumulative Gate 0 latency, integrity spot-check, and collector failures. ([STORY-009](../stories/STORY-009-daily-ops-report.md), TRADING_REVIEWED)
+10. Good-day/bad-day operations rubric + Ops Reviewer Agent: deterministic day-scoring over STORY-009's report, plus the daily-report entrypoint/systemd job and the human-facing review role. ([STORY-010](../stories/STORY-010-ops-rubric-and-reviewer-agent.md), TRADING_REVIEWED)
 
 This is a starting order, not a frozen backlog — Story Agent still freezes each one individually before development starts, and the Trading Expert Agent can reprioritise after any of them.
 
