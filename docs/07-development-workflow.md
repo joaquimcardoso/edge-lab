@@ -179,11 +179,12 @@ A story with no traceable source is rejected at Story Agent's own gate (see [sto
 
 Given Phase 1's exit criterion ("Audit report: reconstructable-event rate and failure profile"), a defensible first sequence:
 
-1. Raw snapshot store: write-only, immutable, SHA-256, for one source.
-2. `edgar_8k` collector (the most defensible free source — official acceptance timestamps, no feed-latency ambiguity) writing into the raw store.
-3. Normaliser + event store for 8-K 2.02/1.01, with `known_at` computed per [01-point-in-time-rules.md §2](01-point-in-time-rules.md).
+1. Raw snapshot store: write-only, immutable, SHA-256, for one source. ([STORY-001](../stories/STORY-001-raw-snapshot-store.md), DEPLOYED)
+2. `edgar_8k` collector (the most defensible free source — official acceptance timestamps, no feed-latency ambiguity) writing into the raw store. ([STORY-002](../stories/STORY-002-edgar-8k-collector.md), DEPLOYED)
+3. Normaliser + event store for 8-K 2.02/1.01, with `known_at` computed per [01-point-in-time-rules.md §2](01-point-in-time-rules.md). ([STORY-003](../stories/STORY-003-normaliser-event-store.md), DEPLOYED — `session_date` deliberately deferred, see item 4a below)
 4. `prices_daily` collector + price store (needed by every downstream feature).
-5. Feature builder: ATR%, beta, ADV — point-in-time only, per §5.
+4a. **Exchange-calendar integration** (added by the Trading Expert review after STORY-003, [06-trading-system-audit-v1.md](06-trading-system-audit-v1.md#story-003--8-k-normaliser-and-event-store-2026-09-25)): trading-day/session-date resolution, holidays, half-days, DST — required before item 5, since both STORY-003's deferred `session_date` and item 5's rolling-window features need the same dependency. Not required before item 4.
+5. Feature builder: ATR%, beta, ADV — point-in-time only, per §5. Depends on item 4a.
 6. Feed-latency audit harness (Gate 0 for [EXP-002](experiments/daily/EXP-002-intraday-continuation.md)).
 
 This is a starting order, not a frozen backlog — Story Agent still freezes each one individually before development starts, and the Trading Expert Agent can reprioritise after any of them.
