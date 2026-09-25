@@ -69,3 +69,11 @@ One entry per DEPLOYED story, per [Trading Expert Agent](agents/trading-expert-a
 
 **Decision: PROCEED.** STORY-002 may leave DRAFT.
 
+### STORY-002 — EDGAR 8-K collector (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes, and it also closed something the review pass had only partially flagged: the collector stores the *complete* SGML-headed submission text file, not the rendered primary document, specifically so `known_at` can later be derived from data the raw store actually has (ACCEPTANCE-DATETIME is in that header) rather than from an ephemeral API response nothing persists. That's a stronger point-in-time guarantee than the story's own source item asked for, caught by the Reviewer gate rather than assumed compliant. 24/24 tests green (10 unchanged from STORY-001 plus 14 new); regression gate still vacuous — no experiment is `FROZEN` yet.
+2. **Does anything here change the next story's priority?** No. [STORY-003](../docs/07-development-workflow.md#suggested-mvp-story-sequence-phase-1) (normaliser + event store, computing `known_at` from the raw 8-K submissions this story now produces) was already next and is now directly unblocked — this collector is exactly what STORY-003 needs to consume. No priority-1/2/3 open item above is touched by this story.
+3. **Should the backlog pause rather than continue?** No blocking concern. One open item worth tracking explicitly rather than treating as resolved: this collector's field-name assumptions (SEC's submissions-API schema) have not been checked against one real, live response — this sandbox's network egress doesn't reach `data.sec.gov`. That verification is required before this collector is trusted unattended on the Pi (STORY-002's own Definition of done), but it does not block continuing to build STORY-003 against the fixture-verified parsing logic in the meantime.
+
+**Decision: PROCEED.** STORY-003 may leave DRAFT. Carried-forward open item: verify `edgar_8k`'s field-name assumptions against one real `data.sec.gov` response before unattended Pi deployment (not before continuing development here).
+
