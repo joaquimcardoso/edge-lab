@@ -141,3 +141,15 @@ One entry per DEPLOYED story, per [Trading Expert Agent](agents/trading-expert-a
 
 **Decision: PROCEED to Pi installation (operational, not a repository story) — no further MVP story is queued pending the user's direction.**
 
+## Additive Phase 2 scaffolding (not part of the Phase 1 MVP sequence)
+
+Following an external review document proposing a Research → Replay → Paper Trading → Live Signal target architecture, the user asked specifically for pieces that do not impact the current (Phase 1) lab -- no schema changes to `raw_snapshot`/`event`/`price_daily`, nothing requiring a validated strategy (none exists; Gate 0 hasn't run; no experiment has reached ACCEPT per docs/05-experiment-protocol.md). This section tracks that separate track.
+
+### STORY-011 — Signal schema, execution-mode enum, strategy interface (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes. A `Signal` dataclass, `ExecutionMode` enum, and `Strategy` Protocol now exist as shared contracts any future backtest/replay/paper/live code can use without duplicating strategy logic per mode -- the mission document's own stated core principle. Deliberately excludes a `confidence` field entirely (not defaulted to None) per ADR-0001. `require_order_execution_allowed` fails closed for every current `ExecutionMode`, concretely enforcing "LIVE_SIGNAL != LIVE_ORDER_EXECUTION" as code rather than a comment, consistent with ADR-0005 (manual execution only, no broker API). 162/162 tests green (18 new), 0 regressions. No existing table or frozen spec was touched.
+2. **Does anything here change the next story's priority?** No -- confirms the user's own scoping decision (foundation layer + Telegram-for-ops-status + historical backfill, in that order) rather than surfacing a reason to reorder it.
+3. **Should the backlog pause rather than continue?** No. Nothing here is wired to a real strategy, and nothing here should be read as the system being closer to live trading than it is -- Phase 1 (collection & audit) still hasn't reached the Pi, and no experiment has run against real data yet. This is deliberately inert scaffolding.
+
+**Decision: PROCEED to the terminology reconciliation doc and new agent specs (STORY-012).**
+
