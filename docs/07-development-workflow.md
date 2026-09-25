@@ -29,6 +29,11 @@ diagram](03-architecture.md#diagrams):
 - `experiments/` — experiment runner and evaluation code shared across
   Swing/Daily/Value (not the experiment *specs* themselves, which stay
   in `docs/experiments/` as frozen documents).
+- `audit/` — analysis harnesses over already-collected data that gate
+  whether a source/strategy may proceed (e.g. Gate 0's feed-latency
+  audit, STORY-007) — distinct from `experiments/`, which tests a
+  trading hypothesis; `audit/` tests whether the *data* is trustworthy
+  enough to test one.
 - Later, Phase 3+ only: `signal/`, `risk/`, `portfolio/`.
 
 A story that doesn't fit an existing layer is a signal to add a new

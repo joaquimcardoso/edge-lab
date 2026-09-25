@@ -23,6 +23,11 @@ something this function enforces -- it still returns the correct
 same-day session_date; a caller building a V1 experiment is
 responsible for excluding intraday events itself.
 
+EASTERN, MARKET_OPEN and MARKET_CLOSE are exported deliberately (not
+underscore-prefixed): src/edgelab/audit/feed_latency.py (STORY-007)
+reuses them directly rather than re-deriving its own ET-conversion
+and open-time logic -- one definition of "market open," not two.
+
 Story: stories/STORY-005-exchange-calendar.md
 """
 
@@ -35,9 +40,9 @@ from zoneinfo import ZoneInfo
 import pandas_market_calendars as mcal
 
 _NYSE = mcal.get_calendar("NYSE")
-_EASTERN = ZoneInfo("America/New_York")
-_MARKET_OPEN = time(9, 30)
-_MARKET_CLOSE = time(16, 0)
+EASTERN = ZoneInfo("America/New_York")
+MARKET_OPEN = time(9, 30)
+MARKET_CLOSE = time(16, 0)
 _MAX_HOLIDAY_SEARCH_DAYS = 14
 
 
@@ -71,14 +76,14 @@ def compute_session_date(event_time_utc: str) -> str:
     that could react to it, per 01-point-in-time-rules.md §3.
     """
     dt_utc = datetime.fromisoformat(event_time_utc.replace("Z", "+00:00"))
-    dt_et = dt_utc.astimezone(_EASTERN)
+    dt_et = dt_utc.astimezone(EASTERN)
     event_date = dt_et.date().isoformat()
 
     if not is_trading_day(event_date):
         return next_trading_day(event_date)
 
-    if dt_et.time() < _MARKET_OPEN:
+    if dt_et.time() < MARKET_OPEN:
         return event_date
-    if dt_et.time() < _MARKET_CLOSE:
+    if dt_et.time() < MARKET_CLOSE:
         return event_date
     return next_trading_day(event_date)
