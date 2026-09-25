@@ -146,6 +146,26 @@ def write_raw_snapshot(
     )
 
 
+def list_all_raw_snapshots(*, db_path: PathLike) -> "list[RawSnapshot]":
+    """Read every row's metadata (not payload) -- for reporting only.
+
+    Story: stories/STORY-009-daily-ops-report.md. This does not
+    re-verify sha256 for every row (that would mean decompressing
+    every payload on every report run); use read_raw_snapshot for
+    the integrity check itself, over a sample.
+    """
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT id, source, url, retrieved_at, first_seen_at, "
+            "sha256, payload_path, payload_bytes FROM raw_snapshot "
+            "ORDER BY id"
+        ).fetchall()
+    finally:
+        conn.close()
+    return [RawSnapshot(*row) for row in rows]
+
+
 def read_raw_snapshot(
     snapshot_id: int, *, db_path: PathLike
 ) -> Tuple[RawSnapshot, bytes]:

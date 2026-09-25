@@ -21,16 +21,22 @@ Story: stories/STORY-008-pi-collector-entrypoint.md
 from __future__ import annotations
 
 import csv
+import json
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Sequence, Tuple
+from typing import Callable, List, Sequence, Tuple
 
 from edgelab.collectors.edgar_8k import CollectionFailure, HttpClient, collect_8k_for_cik
 from edgelab.config import CollectorConfig, load_collector_config
 from edgelab.normalisers.edgar_8k import normalise_snapshot
 
 logger = logging.getLogger("edgelab.collect_premarket_8k")
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 class UniverseError(RuntimeError):
@@ -164,6 +170,43 @@ def run(
     return RunSummary(outcomes=tuple(outcomes))
 
 
+def append_failure_log(
+    summary: RunSummary, *, log_dir: Path, now: Callable[[], str] = _utc_now_iso
+) -> int:
+    """Append one JSON line per recorded failure to
+    <log_dir>/collector_failures.jsonl, so a day's failures survive
+    past the in-memory RunSummary a systemd oneshot run does not
+    otherwise persist anywhere -- STORY-009's daily ops report reads
+    this file back. Append-only, matching this repository's raw-store
+    precedent: a run's own failures are never edited after the fact,
+    only ever added to.
+
+    Story: stories/STORY-009-daily-ops-report.md
+    """
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "collector_failures.jsonl"
+    timestamp = now()
+    written = 0
+    with log_path.open("a") as fh:
+        for outcome in summary.outcomes:
+            for failure in outcome.failures:
+                fh.write(
+                    json.dumps(
+                        {
+                            "timestamp": timestamp,
+                            "ticker": outcome.ticker,
+                            "cik": outcome.cik,
+                            "accession_number": failure.accession_number,
+                            "url": failure.url,
+                            "reason": failure.reason,
+                        }
+                    )
+                    + "\n"
+                )
+                written += 1
+    return written
+
+
 def main() -> RunSummary:
     logging.basicConfig(level=logging.INFO)
     config = load_collector_config()
@@ -173,6 +216,7 @@ def main() -> RunSummary:
     from edgelab.net.requests_http_client import RequestsHttpClient
 
     summary = run(universe, http_client=RequestsHttpClient(), config=config)
+    append_failure_log(summary, log_dir=config.log_dir)
     logger.info(
         "run complete: %d snapshots, %d events, %d CIKs with failures",
         summary.total_snapshots,

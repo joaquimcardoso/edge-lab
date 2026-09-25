@@ -174,3 +174,15 @@ def list_events_for_snapshot(snapshot_id: int, *, db_path: PathLike) -> List[Eve
     finally:
         conn.close()
     return [_row_to_event(row) for row in rows]
+
+
+def list_all_events(*, db_path: PathLike) -> List[Event]:
+    """Read every event -- for reporting and Gate 0 cumulative latency
+    analysis only. Story: stories/STORY-009-daily-ops-report.md.
+    """
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(f"SELECT {_COLUMNS} FROM event ORDER BY event_id").fetchall()
+    finally:
+        conn.close()
+    return [_row_to_event(row) for row in rows]

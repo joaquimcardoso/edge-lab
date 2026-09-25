@@ -10,6 +10,7 @@ one.
 from __future__ import annotations
 
 import csv
+import json
 from pathlib import Path
 
 import pytest
@@ -30,6 +31,7 @@ def _config(tmp_path) -> CollectorConfig:
         event_db_path=data_dir / "event.sqlite3",
         reports_dir=data_dir / "reports",
         universe_path=tmp_path / "universe.csv",
+        log_dir=data_dir / "logs",
     )
 
 
@@ -155,3 +157,53 @@ def test_load_universe_raises_for_wrong_header(tmp_path):
     path.write_text("symbol,id\nAAPL,320193\n")
     with pytest.raises(cp.UniverseError, match="must have a header"):
         cp.load_universe(path)
+
+
+def test_append_failure_log_writes_one_json_line_per_failure(tmp_path):
+    from edgelab.collectors.edgar_8k import CollectionFailure
+
+    summary = cp.RunSummary(
+        outcomes=(
+            cp.CikOutcome(
+                ticker="BADCO", cik="1", snapshots_written=0, events_written=0,
+                failures=(CollectionFailure(accession_number="", url="", reason="boom"),),
+            ),
+            cp.CikOutcome(
+                ticker="GOODCO", cik="2", snapshots_written=2, events_written=2, failures=(),
+            ),
+        )
+    )
+    log_dir = tmp_path / "logs"
+    written = cp.append_failure_log(summary, log_dir=log_dir, now=lambda: "2026-09-20T12:00:00Z")
+
+    assert written == 1
+    lines = (log_dir / "collector_failures.jsonl").read_text().splitlines()
+    assert len(lines) == 1
+    row = json.loads(lines[0])
+    assert row == {
+        "timestamp": "2026-09-20T12:00:00Z",
+        "ticker": "BADCO",
+        "cik": "1",
+        "accession_number": "",
+        "url": "",
+        "reason": "boom",
+    }
+
+
+def test_append_failure_log_appends_across_calls(tmp_path):
+    from edgelab.collectors.edgar_8k import CollectionFailure
+
+    summary = cp.RunSummary(
+        outcomes=(
+            cp.CikOutcome(
+                ticker="BADCO", cik="1", snapshots_written=0, events_written=0,
+                failures=(CollectionFailure(accession_number="", url="", reason="first"),),
+            ),
+        )
+    )
+    log_dir = tmp_path / "logs"
+    cp.append_failure_log(summary, log_dir=log_dir, now=lambda: "2026-09-20T12:00:00Z")
+    cp.append_failure_log(summary, log_dir=log_dir, now=lambda: "2026-09-21T12:00:00Z")
+
+    lines = (log_dir / "collector_failures.jsonl").read_text().splitlines()
+    assert len(lines) == 2
