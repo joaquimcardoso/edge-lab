@@ -8,6 +8,57 @@ This document defines how software gets built for edge-lab (collectors, normalis
 
 All code is written, reviewed, tested and merged in this repository — on the laptop or in a Claude Code / Cowork session, never directly on the Pi. The Pi only ever pulls an already-tagged, already-tested release (`git pull` plus a service restart, per [04-infrastructure.md](04-infrastructure.md)); it is a deployment target, not a development environment. This is what the [Integrator Agent](agents/integrator-agent.md) and [Orchestrator Agent](agents/orchestrator-agent.md) enforce: nothing reaches the Pi that hasn't already gone through every gate in this repository first.
 
+## Repository layout
+
+Code and tests each have one obvious home, so a Developer Agent never
+has to guess where a new module or test belongs, and a Reviewer Agent
+can check "is this in the right place" mechanically.
+
+**`src/edgelab/<layer>/`** — one subpackage per pipeline layer, named
+after the layer it implements in the [architecture
+diagram](03-architecture.md#diagrams):
+
+- `storage/` — the immutable raw store and the downstream event/price/
+  fundamentals stores (`storage/raw_snapshot.py` is STORY-001).
+- `collectors/` — one module per source in
+  [02-data-sources.md](02-data-sources.md) (`collectors/edgar_8k.py`,
+  `collectors/prices_daily.py`, ...).
+- `normalisers/` — entity linking, dedup, event classification.
+- `features/` — point-in-time feature builder (ATR%, beta, ADV, ...).
+- `experiments/` — experiment runner and evaluation code shared across
+  Swing/Daily/Value (not the experiment *specs* themselves, which stay
+  in `docs/experiments/` as frozen documents).
+- Later, Phase 3+ only: `signal/`, `risk/`, `portfolio/`.
+
+A story that doesn't fit an existing layer is a signal to add a new
+subpackage, named after the layer, not to drop a module into an
+unrelated one.
+
+**`tests/`** — mirrors `src/edgelab/` by *test kind*, not by module,
+because the three kinds are checked by different gates
+(see [Gate criteria](#gate-criteria) below):
+
+- `tests/unit/` — one file per module under test (`tests/unit/
+  test_raw_snapshot.py` tests `src/edgelab/storage/raw_snapshot.py`).
+  Isolated, fast, no cross-module wiring. Owned by the [Unit Tester
+  Agent](agents/unit-tester-agent.md).
+- `tests/system/` — multi-module, end-to-end-within-the-repo
+  scenarios (e.g. several collector runs writing into one shared
+  store, then read back). Owned by the [System Tester
+  Agent](agents/system-tester-agent.md).
+- `tests/regression/` — one fixture per `FROZEN` experiment, used by
+  the Integrator Agent's "0 regressions" gate (see [Definition of "0
+  regressions"](#definition-of-0-regressions) below). Empty until the
+  first experiment freezes; a story that predates any `FROZEN`
+  experiment satisfies this gate vacuously, and its system test says
+  so explicitly rather than skipping the check silently.
+
+`pytest.ini` at the repo root sets `pythonpath = src` so
+`src/edgelab/...` is importable without an install step, and
+`testpaths = tests` so `python3 -m pytest` (not a bare `pytest` —
+its console-script entry point may not be on `PATH`) picks up all
+three kinds by default.
+
 ## Principle: reuse the experiment lifecycle for stories
 
 [05-experiment-protocol.md](05-experiment-protocol.md) already established a discipline that works: `DRAFT → FROZEN → RUNNING → ACCEPT/REJECT/INCONCLUSIVE`, where freezing before results exist prevents unconsciously optimising toward an outcome. A feature story gets the same treatment, for the same reason: a developer who can quietly renegotiate scope mid-build is exactly as dangerous as an experiment spec that can be edited after seeing results.
