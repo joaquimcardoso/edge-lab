@@ -121,7 +121,9 @@ def test_build_events_known_at_equals_first_seen_at():
     assert event.known_at == event.first_seen_at
     assert event.published_at == "2026-09-20T16:32:11Z"
     assert event.direction is None
-    assert event.session_date is None
+    # 2026-09-20 is a Sunday -- session_date correctly rolls to the
+    # next NYSE trading day (STORY-005), not "same day."
+    assert event.session_date == "2026-09-21"
     assert event.security_id == "0000320193"
     assert event.type == "earnings_release"
     assert event.source_id == "0000320193-26-000050"

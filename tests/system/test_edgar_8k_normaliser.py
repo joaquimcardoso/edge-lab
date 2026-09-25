@@ -6,6 +6,9 @@ end-to-end against it and reads the resulting events back through
 STORY-003's own event store -- proving the two stories' storage
 layers actually compose, not just that each parses in isolation.
 
+Also verifies STORY-005's wiring: session_date is populated (not
+None) using the real NYSE calendar.
+
 Regression fixture set: still vacuous, as in STORY-001/002 -- no
 experiment is FROZEN yet.
 """
@@ -50,6 +53,9 @@ def test_normalise_snapshot_end_to_end(tmp_path):
         assert event.snapshot_id == snapshot.id
         assert event.known_at == snapshot.first_seen_at
         assert event.security_id == "0000320193"
+        # STORY-005: session_date is now computed, not left None.
+        assert event.session_date is not None
+        assert event.session_date == "2026-09-21"  # 2026-09-20 acceptance is a Sunday
 
     stored = list_events_for_snapshot(snapshot.id, db_path=event_db_path)
     assert {e.type for e in stored} == types

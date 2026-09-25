@@ -24,6 +24,7 @@ diagram](03-architecture.md#diagrams):
   [02-data-sources.md](02-data-sources.md) (`collectors/edgar_8k.py`,
   `collectors/prices_daily.py`, ...).
 - `normalisers/` — entity linking, dedup, event classification.
+- `calendar/` — trading-day/session-date resolution (holidays, half-days, DST) — a shared dependency of normalisers and the feature builder, not owned by either (added for STORY-005).
 - `features/` — point-in-time feature builder (ATR%, beta, ADV, ...).
 - `experiments/` — experiment runner and evaluation code shared across
   Swing/Daily/Value (not the experiment *specs* themselves, which stay
@@ -181,11 +182,11 @@ Given Phase 1's exit criterion ("Audit report: reconstructable-event rate and fa
 
 1. Raw snapshot store: write-only, immutable, SHA-256, for one source. ([STORY-001](../stories/STORY-001-raw-snapshot-store.md), DEPLOYED)
 2. `edgar_8k` collector (the most defensible free source — official acceptance timestamps, no feed-latency ambiguity) writing into the raw store. ([STORY-002](../stories/STORY-002-edgar-8k-collector.md), DEPLOYED)
-3. Normaliser + event store for 8-K 2.02/1.01, with `known_at` computed per [01-point-in-time-rules.md §2](01-point-in-time-rules.md). ([STORY-003](../stories/STORY-003-normaliser-event-store.md), DEPLOYED — `session_date` deliberately deferred, see item 4a below)
-4. `prices_daily` collector + price store (needed by every downstream feature).
-4a. **Exchange-calendar integration** (added by the Trading Expert review after STORY-003, [06-trading-system-audit-v1.md](06-trading-system-audit-v1.md#story-003--8-k-normaliser-and-event-store-2026-09-25)): trading-day/session-date resolution, holidays, half-days, DST — required before item 5, since both STORY-003's deferred `session_date` and item 5's rolling-window features need the same dependency. Not required before item 4.
-5. Feature builder: ATR%, beta, ADV — point-in-time only, per §5. Depends on item 4a.
-6. Feed-latency audit harness (Gate 0 for [EXP-002](experiments/daily/EXP-002-intraday-continuation.md)).
+3. Normaliser + event store for 8-K 2.02/1.01, with `known_at` computed per [01-point-in-time-rules.md §2](01-point-in-time-rules.md). ([STORY-003](../stories/STORY-003-normaliser-event-store.md), DEPLOYED — `session_date` deliberately left `None`, backfilled by item 5 below)
+4. `prices_daily` collector + price store (needed by every downstream feature). ([STORY-004](../stories/STORY-004-prices-daily-collector.md), DEPLOYED)
+5. **Exchange-calendar integration** (added by the Trading Expert review after STORY-003, [06-trading-system-audit-v1.md](06-trading-system-audit-v1.md#story-003--8-k-normaliser-and-event-store-2026-09-25)): trading-day/session-date resolution, holidays, half-days, DST. Required before item 6, since both STORY-003's deferred `session_date` and item 6's rolling-window features need the same dependency; not required before item 4, which is why item 4 shipped first. ([STORY-005](../stories/STORY-005-exchange-calendar.md))
+6. Feature builder: ATR%, beta, ADV — point-in-time only, per §5. Depends on item 5. (STORY-006)
+7. Feed-latency audit harness (Gate 0 for [EXP-002](experiments/daily/EXP-002-intraday-continuation.md)). (STORY-007)
 
 This is a starting order, not a frozen backlog — Story Agent still freezes each one individually before development starts, and the Trading Expert Agent can reprioritise after any of them.
 

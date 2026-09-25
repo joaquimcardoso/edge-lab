@@ -20,13 +20,13 @@ need later.
 Direction is not inferred from 8-K text in V1 (03-architecture.md);
 every event this module produces carries direction=None (UNKNOWN).
 
-session_date is deliberately left None -- see STORY-003's Explicit
-scope boundary: mapping a timestamp to a trading session correctly
-needs a real exchange-calendar library (trading days, half-days,
-DST), and faking it would be a point-in-time bug wearing a passing
-test.
+session_date is computed via src/edgelab/calendar/trading_calendar.py
+(STORY-005) from published_at -- backed by a real NYSE trading
+calendar, not a hard-coded weekday check. STORY-003 originally left
+this field None rather than fake it; STORY-005 backfilled it once
+the calendar dependency existed.
 
-Story: stories/STORY-003-normaliser-event-store.md
+Story: stories/STORY-003-normaliser-event-store.md, STORY-005 (session_date)
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
+from edgelab.calendar.trading_calendar import compute_session_date
 from edgelab.storage.event_store import Event, write_event
 from edgelab.storage.raw_snapshot import read_raw_snapshot
 
@@ -178,7 +179,7 @@ def build_events(
             published_at=header.acceptance_datetime,
             first_seen_at=first_seen_at,
             known_at=first_seen_at,  # live-collected rule, 01-point-in-time-rules.md §2
-            session_date=None,  # see STORY-003's explicit scope boundary
+            session_date=compute_session_date(header.acceptance_datetime),  # 01-point-in-time-rules.md §3, via STORY-005
             source=source,
             source_id=header.accession_number,
             snapshot_id=snapshot_id,
