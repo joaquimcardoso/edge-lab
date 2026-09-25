@@ -153,3 +153,11 @@ Following an external review document proposing a Research → Replay → Paper 
 
 **Decision: PROCEED to the terminology reconciliation doc and new agent specs (STORY-012).**
 
+### STORY-012 — Terminology reconciliation and new agent specs (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes. docs/10-terminology-reconciliation.md maps the mission document's vocabulary onto this repository's already-frozen equivalents, confirming most of what it asked for already exists (strategy lifecycle, point-in-time terminology, cost-scenario discipline) and explicitly stating nothing here changes 05-experiment-protocol.md's acceptance criteria. Three new agent specs (Trading Simulation, Signal/Execution, Notification) follow the existing docs/agents format exactly, each with an explicit "Status" note saying whether they're activated -- Trading Simulation is not, Signal/Execution is partially (STORY-011's contracts), Notification will be once STORY-013 lands. Docs-only; 162/162 tests unaffected.
+2. **Does anything here change the next story's priority?** No -- confirms STORY-013 (Telegram) next, per the user's own stated order.
+3. **Should the backlog pause rather than continue?** No.
+
+**Decision: PROCEED to STORY-013 (Telegram adapter, ops status only).**
+
