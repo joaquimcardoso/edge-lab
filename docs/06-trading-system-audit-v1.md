@@ -125,3 +125,11 @@ One entry per DEPLOYED story, per [Trading Expert Agent](agents/trading-expert-a
 
 **Decision: PROCEED to STORY-009 (daily operations report artifact).**
 
+### STORY-009 — Daily operations report artifact (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes. There is now a concrete artifact the user's "black box, look at what it generates" request was missing: `reports/<date>-ops.md` and its JSON sibling, covering today's collection counts, cumulative Gate 0 latency (reusing STORY-007's `compute_latency_stats` rather than a second implementation), a raw-store integrity spot-check, and today's collector failures. That last one exposed a real gap while building it: STORY-008's `run()` returned failures only as an in-memory `RunSummary` a systemd oneshot run never persists anywhere — a day's failures would have been invisible to any later review. Fixed by adding `append_failure_log` (append-only, matching the raw-store precedent) and wiring it into `main()`, rather than deferring it to yet another story. 130/130 tests green (8 new), 0 regressions.
+2. **Does anything here change the next story's priority?** No — confirms STORY-010 (good-day/bad-day rubric + Ops Reviewer Agent) as the direct next step; this report's JSON output is exactly what that rubric needs to score without re-parsing Markdown, by design.
+3. **Should the backlog pause rather than continue?** No. One thing worth naming rather than burying: the integrity check samples only the most recently written snapshots each time (`sample_size`, default 20), so older evidence is never re-spot-checked once newer snapshots exist. Acceptable at this project's current local-SQLite, single-operator scale (stated in the story's scope boundary), but a real limitation if the raw store grows very large before a real restore/backup test (docs/04-infrastructure.md) is exercised.
+
+**Decision: PROCEED to STORY-010 (good-day/bad-day rubric + Ops Reviewer Agent).**
+
