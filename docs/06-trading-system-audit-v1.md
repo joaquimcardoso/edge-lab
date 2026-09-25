@@ -101,3 +101,11 @@ One entry per DEPLOYED story, per [Trading Expert Agent](agents/trading-expert-a
 
 **Decision: PROCEED.** STORY-006 (feature builder) may leave DRAFT.
 
+### STORY-006 — Point-in-time feature builder (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes. ATRpct20, ADV20 and zero-intercept beta252 are implemented to match the exact formulas already frozen in EXP-001/EXP-002/05-experiment-protocol.md, not reinvented or approximated -- including the specific detail that ATR uses Wilder's smoothing (not a simple moving average) and beta is a no-intercept OLS estimator (not cov/var). The point-in-time cutoff is enforced structurally at the read layer and proven by a test that plants a same-day "poison" price row and confirms it never leaks in. A real alignment bug (pairing stock/market returns by list position instead of trading date) was caught and fixed during review, before any test existed to hide it. 90/90 tests green (14 new unit, 2 new system, 74 unchanged).
+2. **Does anything here change the next story's priority?** No. STORY-007 (feed-latency audit harness, Gate 0 for EXP-002) was already next and doesn't depend on this story's output beyond the calendar dependency STORY-005 already provides.
+3. **Should the backlog pause rather than continue?** No blocking concern. Worth naming: this story explicitly does not build a materialised/cached feature table -- every call recomputes from `price_daily` directly. Fine at current data volumes; if an experiment run's runtime becomes dominated by feature recomputation, that's a legitimate future story, not a hidden cost today.
+
+**Decision: PROCEED.** STORY-007 (feed-latency audit harness) may leave DRAFT.
+

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | FROZEN |
+| Status | TRADING_REVIEWED |
 | Owner stage | Story Agent |
 
 ## Source
