@@ -1,0 +1,5 @@
+# Runtime dependencies. Pinned to what this repository's collectors
+# were built and tested against (docs/07-development-workflow.md).
+# Install with: python3 -m pip install -r requirements.txt
+requests==2.34.2
+yfinance==1.7.0
