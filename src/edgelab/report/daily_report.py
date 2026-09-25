@@ -14,6 +14,7 @@ Story: stories/STORY-009-daily-ops-report.md
 from __future__ import annotations
 
 import json
+import shutil
 from collections import Counter
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -71,6 +72,9 @@ class DailyOpsReport:
     latency_stats: Tuple[LatencyStats, ...]
     latency_gaps: Tuple[LatencyGap, ...]
     data_dir_bytes: int
+    collector_runs_today: int
+    disk_total_bytes: Optional[int]
+    disk_free_bytes: Optional[int]
 
 
 def _dir_size_bytes(path: Path) -> int:
@@ -94,6 +98,38 @@ def _integrity_check(
         except IntegrityError:
             failures.append(snap.id)
     return len(sample), tuple(failures)
+
+
+def _count_heartbeats_today(log_dir: Path, report_date: str) -> int:
+    log_path = log_dir / "run_heartbeats.jsonl"
+    if not log_path.exists():
+        return 0
+    count = 0
+    for line in log_path.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        row = json.loads(line)
+        if _to_et_date(row["timestamp"]) == report_date:
+            count += 1
+    return count
+
+
+def _disk_usage(path: Path) -> Tuple[Optional[int], Optional[int]]:
+    """(total_bytes, free_bytes) for the filesystem containing `path`,
+    or (None, None) if that filesystem cannot be inspected (e.g. the
+    directory does not exist yet on a completely fresh install) --
+    a missing disk-usage reading is treated as "unknown," never as
+    "0 bytes free," by every caller.
+    """
+    probe = path if path.exists() else path.parent
+    try:
+        while not probe.exists() and probe != probe.parent:
+            probe = probe.parent
+        usage = shutil.disk_usage(probe)
+        return usage.total, usage.free
+    except OSError:
+        return None, None
 
 
 def _read_failures_today(log_dir: Path, report_date: str) -> Tuple[CollectorFailureRecord, ...]:
@@ -143,6 +179,8 @@ def build_daily_ops_report(
     )
 
     failures_today = _read_failures_today(log_dir, report_date)
+    collector_runs_today = _count_heartbeats_today(log_dir, report_date)
+    disk_total_bytes, disk_free_bytes = _disk_usage(data_dir)
 
     # Cumulative (all-time) Gate 0 latency, per (source, event_type)
     # combination actually present -- not just today's, since Gate 0
@@ -169,6 +207,9 @@ def build_daily_ops_report(
         latency_stats=tuple(latency_stats),
         latency_gaps=tuple(latency_gaps),
         data_dir_bytes=_dir_size_bytes(data_dir),
+        collector_runs_today=collector_runs_today,
+        disk_total_bytes=disk_total_bytes,
+        disk_free_bytes=disk_free_bytes,
     )
 
 
@@ -199,6 +240,12 @@ def render_daily_report(report: DailyOpsReport) -> str:
     lines.append(f"- Total raw snapshots (all time): {report.total_snapshots_all_time}")
     lines.append(f"- Total events (all time): {report.total_events_all_time}")
     lines.append(f"- Data directory size: {report.data_dir_bytes:,} bytes")
+    lines.append(f"- Collector runs today (heartbeats): {report.collector_runs_today}")
+    if report.disk_total_bytes is not None and report.disk_free_bytes is not None:
+        free_ratio = report.disk_free_bytes / report.disk_total_bytes
+        lines.append(f"- Disk free: {report.disk_free_bytes:,} / {report.disk_total_bytes:,} bytes ({free_ratio:.0%})")
+    else:
+        lines.append("- Disk free: unknown")
     lines.append("")
 
     lines.append("## Integrity check")

@@ -8,11 +8,13 @@ set -euo pipefail
 
 UNIT_DEST="/etc/systemd/system"
 
-echo "==> Stopping and disabling edgelab-8k-poll.timer (if present)"
+echo "==> Stopping and disabling timers (if present)"
 sudo systemctl disable --now edgelab-8k-poll.timer 2>/dev/null || true
+sudo systemctl disable --now edgelab-daily-report.timer 2>/dev/null || true
 
 echo "==> Removing unit files"
 sudo rm -f "${UNIT_DEST}/edgelab-8k-poll.service" "${UNIT_DEST}/edgelab-8k-poll.timer"
+sudo rm -f "${UNIT_DEST}/edgelab-daily-report.service" "${UNIT_DEST}/edgelab-daily-report.timer"
 sudo systemctl daemon-reload
 
 echo "==> Done. /mnt/data was not touched."

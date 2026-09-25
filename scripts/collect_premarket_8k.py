@@ -207,6 +207,22 @@ def append_failure_log(
     return written
 
 
+def append_heartbeat(log_dir: Path, *, now: Callable[[], str] = _utc_now_iso) -> None:
+    """Append one line to <log_dir>/run_heartbeats.jsonl every time
+    this entrypoint runs, regardless of outcome -- so a later report
+    can tell "the collector ran and found nothing" apart from "the
+    collector never ran today," which snapshot/event counts alone
+    cannot distinguish. Same append-only pattern as
+    append_failure_log.
+
+    Story: stories/STORY-010-ops-rubric-and-reviewer-agent.md
+    """
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "run_heartbeats.jsonl"
+    with log_path.open("a") as fh:
+        fh.write(json.dumps({"timestamp": now()}) + "\n")
+
+
 def main() -> RunSummary:
     logging.basicConfig(level=logging.INFO)
     config = load_collector_config()
@@ -216,6 +232,7 @@ def main() -> RunSummary:
     from edgelab.net.requests_http_client import RequestsHttpClient
 
     summary = run(universe, http_client=RequestsHttpClient(), config=config)
+    append_heartbeat(config.log_dir)
     append_failure_log(summary, log_dir=config.log_dir)
     logger.info(
         "run complete: %d snapshots, %d events, %d CIKs with failures",

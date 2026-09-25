@@ -207,3 +207,14 @@ def test_append_failure_log_appends_across_calls(tmp_path):
 
     lines = (log_dir / "collector_failures.jsonl").read_text().splitlines()
     assert len(lines) == 2
+
+
+def test_append_heartbeat_writes_one_line_per_call(tmp_path):
+    log_dir = tmp_path / "logs"
+    cp.append_heartbeat(log_dir, now=lambda: "2026-09-20T08:00:00Z")
+    cp.append_heartbeat(log_dir, now=lambda: "2026-09-20T08:15:00Z")
+
+    lines = (log_dir / "run_heartbeats.jsonl").read_text().splitlines()
+    assert len(lines) == 2
+    assert json.loads(lines[0]) == {"timestamp": "2026-09-20T08:00:00Z"}
+    assert json.loads(lines[1]) == {"timestamp": "2026-09-20T08:15:00Z"}

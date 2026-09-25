@@ -33,15 +33,21 @@ else
 fi
 
 echo "==> Installing systemd units to ${UNIT_DEST}"
-sudo cp "${DEPLOY_DIR}/edgelab-8k-poll.service" "${UNIT_DEST}/edgelab-8k-poll.service"
-sudo cp "${DEPLOY_DIR}/edgelab-8k-poll.timer" "${UNIT_DEST}/edgelab-8k-poll.timer"
+UNITS=(
+  edgelab-8k-poll.service edgelab-8k-poll.timer
+  edgelab-daily-report.service edgelab-daily-report.timer
+)
+for unit in "${UNITS[@]}"; do
+  sudo cp "${DEPLOY_DIR}/${unit}" "${UNIT_DEST}/${unit}"
+done
 sudo systemctl daemon-reload
 
 if [[ "${ENV_READY}" -eq 1 ]]; then
-  echo "==> Enabling and starting edgelab-8k-poll.timer"
+  echo "==> Enabling and starting timers"
   sudo systemctl enable --now edgelab-8k-poll.timer
-  echo "==> Done. Check status with: systemctl status edgelab-8k-poll.timer"
+  sudo systemctl enable --now edgelab-daily-report.timer
+  echo "==> Done. Check status with: systemctl status edgelab-8k-poll.timer edgelab-daily-report.timer"
 else
   echo "==> Units installed but NOT enabled. Create ${ENV_FILE}, then run:" >&2
-  echo "        sudo systemctl enable --now edgelab-8k-poll.timer" >&2
+  echo "        sudo systemctl enable --now edgelab-8k-poll.timer edgelab-daily-report.timer" >&2
 fi

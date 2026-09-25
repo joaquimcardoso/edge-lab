@@ -25,8 +25,14 @@ def _parse(name: str) -> configparser.ConfigParser:
     return parser
 
 
-def test_service_unit_is_well_formed_ini():
-    parser = _parse("edgelab-8k-poll.service")
+import pytest
+
+
+@pytest.mark.parametrize(
+    "service_name", ["edgelab-8k-poll.service", "edgelab-daily-report.service"]
+)
+def test_service_unit_is_well_formed_ini(service_name):
+    parser = _parse(service_name)
     assert "Unit" in parser
     assert "Service" in parser
     assert parser["Unit"]["RequiresMountsFor"] == "/mnt/data"
@@ -34,8 +40,11 @@ def test_service_unit_is_well_formed_ini():
     assert "MemoryMax" in parser["Service"]
 
 
-def test_timer_unit_is_well_formed_ini():
-    parser = _parse("edgelab-8k-poll.timer")
+@pytest.mark.parametrize(
+    "timer_name", ["edgelab-8k-poll.timer", "edgelab-daily-report.timer"]
+)
+def test_timer_unit_is_well_formed_ini(timer_name):
+    parser = _parse(timer_name)
     assert "Timer" in parser
     assert "America/New_York" in parser["Timer"]["OnCalendar"]
     assert parser["Install"]["WantedBy"] == "timers.target"

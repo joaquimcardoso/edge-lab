@@ -1,0 +1,12 @@
+[Unit]
+Description=edge-lab: build the daily operations report + Gate 0 verdict
+RequiresMountsFor=/mnt/data
+After=network-online.target mnt-data.mount edgelab-8k-poll.timer
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/edgelab.env
+WorkingDirectory=/opt/edgelab
+ExecStart=/opt/edgelab/.venv/bin/python /opt/edgelab/scripts/build_daily_report.py
+MemoryMax=256M
+Nice=5

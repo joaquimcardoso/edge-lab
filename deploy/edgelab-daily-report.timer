@@ -1,0 +1,13 @@
+[Unit]
+Description=edge-lab: schedule for edgelab-daily-report.service
+
+[Timer]
+# docs/04-infrastructure.md: "Daily report + commit" at 17:00 ET.
+# The commit half is not implemented by this service -- see
+# STORY-010's explicit scope boundary.
+OnCalendar=Mon..Fri 17:00 America/New_York
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
