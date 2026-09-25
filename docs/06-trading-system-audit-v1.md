@@ -161,3 +161,11 @@ Following an external review document proposing a Research → Replay → Paper 
 
 **Decision: PROCEED to STORY-013 (Telegram adapter, ops status only).**
 
+### STORY-013 — Telegram adapter, ops status only (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes. `RequestsTelegramSender` + `format_ops_status` + `notify_ops_status` wire STORY-009/010's already-real `DailyOpsReport`/`DayVerdict` to a Telegram push -- never a trading signal, since none exists; the message itself states this plainly ("No trading signal. No live trading exists."), matching the Notification Agent spec's constraint that Telegram is a sink, never part of decision logic. Idempotency (`telegram_sent.jsonl`, one send per `report_date`) reuses STORY-009/010's own append-only log pattern rather than inventing a new one, and a send failure is deliberately never recorded as sent, so a systemd retry tries again instead of silently going dark for a day. Wired into `build_daily_report.py.main()` as strictly additive: the report is written to disk regardless of whether Telegram is configured or reachable, and a `TelegramSendError` is caught and logged, never allowed to fail the report-building job itself -- the same per-unit failure isolation principle STORY-008's `run()` already established for per-CIK collector failures. 176/176 tests green (14 new), 0 regressions. No existing table, schema, or frozen spec touched; `.env.example`/`08-credentials.md` document the two new optional env vars.
+2. **Does anything here change the next story's priority?** No -- confirms STORY-014 (historical backfill entrypoint) next, prompted by the user's own question about why old-data paper testing wasn't in scope; the answer (no historical data has ever been collected in this repo, and event-driven point-in-time backtesting specifically needs Gate 0's measured `declared_feed_lag` first per STORY-003's own frozen text) is unaffected by anything built here.
+3. **Should the backlog pause rather than continue?** No. Telegram delivers operational status only and stays silent about anything it cannot honestly say -- it does not make this system closer to live trading, and does not imply Gate 0 has passed.
+
+**Decision: PROCEED to STORY-014 (historical backfill entrypoint).**
+
