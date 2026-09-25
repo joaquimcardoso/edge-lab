@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from edgelab.config import ConfigError, load_collector_config
+from edgelab.config import ConfigError, load_collector_config, load_notification_config
 
 
 def _base_env(**overrides):
@@ -55,3 +55,31 @@ def test_load_collector_config_raises_for_each_missing_required_var(missing_var)
 def test_load_collector_config_raises_for_blank_required_var():
     with pytest.raises(ConfigError, match="EDGELAB_SEC_USER_AGENT"):
         load_collector_config(env=_base_env(EDGELAB_SEC_USER_AGENT="   "))
+
+
+def test_load_notification_config_enabled_when_both_vars_present():
+    config = load_notification_config(
+        env={
+            "EDGELAB_TELEGRAM_BOT_TOKEN": "123:abc",
+            "EDGELAB_TELEGRAM_CHAT_ID": "456",
+        }
+    )
+    assert config.telegram_enabled is True
+    assert config.telegram_bot_token == "123:abc"
+    assert config.telegram_chat_id == "456"
+
+
+def test_load_notification_config_disabled_when_env_empty():
+    config = load_notification_config(env={})
+    assert config.telegram_enabled is False
+    assert config.telegram_bot_token is None
+    assert config.telegram_chat_id is None
+
+
+@pytest.mark.parametrize(
+    "present_var",
+    ["EDGELAB_TELEGRAM_BOT_TOKEN", "EDGELAB_TELEGRAM_CHAT_ID"],
+)
+def test_load_notification_config_disabled_when_only_one_var_present(present_var):
+    config = load_notification_config(env={present_var: "some-value"})
+    assert config.telegram_enabled is False

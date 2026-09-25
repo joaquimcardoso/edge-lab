@@ -88,3 +88,26 @@ def load_collector_config(*, env: Optional[Mapping[str, str]] = None) -> Collect
         universe_path=universe_path,
         log_dir=log_dir,
     )
+
+
+@dataclass(frozen=True)
+class NotificationConfig:
+    """Telegram notification config -- fully optional. Missing either
+    field means notifications are disabled, never an error: whether
+    to use Telegram at all is a legitimate operator choice, unlike
+    the collector's required EDGELAB_SEC_USER_AGENT/EDGELAB_DATA_DIR.
+    """
+
+    telegram_bot_token: Optional[str]
+    telegram_chat_id: Optional[str]
+
+    @property
+    def telegram_enabled(self) -> bool:
+        return bool(self.telegram_bot_token and self.telegram_chat_id)
+
+
+def load_notification_config(*, env: Optional[Mapping[str, str]] = None) -> NotificationConfig:
+    resolved_env: Mapping[str, str] = os.environ if env is None else env
+    token = resolved_env.get("EDGELAB_TELEGRAM_BOT_TOKEN") or None
+    chat_id = resolved_env.get("EDGELAB_TELEGRAM_CHAT_ID") or None
+    return NotificationConfig(telegram_bot_token=token, telegram_chat_id=chat_id)

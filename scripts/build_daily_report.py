@@ -21,7 +21,9 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from edgelab.calendar.trading_calendar import EASTERN, is_trading_day
-from edgelab.config import load_collector_config
+from edgelab.config import load_collector_config, load_notification_config
+from edgelab.notify.notify_ops_status import notify_ops_status
+from edgelab.notify.telegram_sender import RequestsTelegramSender, TelegramSendError
 from edgelab.report.daily_report import DailyOpsReport, build_daily_ops_report, render_daily_report
 from edgelab.report.day_verdict import DayVerdict, render_verdict, score_day
 
@@ -76,12 +78,42 @@ def build_and_write(
     return report, verdict, md_path, json_path
 
 
+def _send_ops_status_notification(
+    report: DailyOpsReport, verdict: DayVerdict, *, log_dir
+) -> None:
+    """Best-effort Telegram notification: the report has already
+    been written to disk by the time this runs, so a Telegram
+    problem (bad token, network outage, rate limit) is logged loudly
+    but never turned into a failure of the report-building job
+    itself -- same isolation principle as collect_premarket_8k.run()
+    not letting one CIK's failure stop the others.
+    """
+    notification_config = load_notification_config()
+    if not notification_config.telegram_enabled:
+        logger.info(
+            "telegram: not configured (EDGELAB_TELEGRAM_BOT_TOKEN/EDGELAB_TELEGRAM_CHAT_ID "
+            "unset) -- skipping notification"
+        )
+        return
+    sender = RequestsTelegramSender(notification_config.telegram_bot_token)
+    try:
+        notify_ops_status(
+            report,
+            verdict,
+            sender=sender,
+            chat_id=notification_config.telegram_chat_id,
+            log_dir=log_dir,
+        )
+    except TelegramSendError as exc:
+        logger.error("telegram: send failed for %s: %s", report.report_date, exc)
+
+
 def main(report_date: Optional[str] = None) -> DayVerdict:
     logging.basicConfig(level=logging.INFO)
     config = load_collector_config()
     date = report_date or _today_et()
 
-    _, verdict, md_path, json_path = build_and_write(
+    report, verdict, md_path, json_path = build_and_write(
         date,
         raw_db_path=config.raw_db_path,
         event_db_path=config.event_db_path,
@@ -92,6 +124,9 @@ def main(report_date: Optional[str] = None) -> DayVerdict:
     logger.info("daily report written: %s (verdict=%s)", md_path, verdict.verdict)
     if verdict.verdict == "BAD":
         logger.error("verdict BAD for %s: %s", date, "; ".join(verdict.reasons))
+
+    _send_ops_status_notification(report, verdict, log_dir=config.log_dir)
+
     return verdict
 
 

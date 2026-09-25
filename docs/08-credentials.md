@@ -32,6 +32,14 @@ Raw GDELT files need no credentials at all. The BigQuery path ([03-architecture.
 3. Store as `EDGELAB_FINNHUB_API_KEY` in `.env`.
 4. Getting the key is step one, not a green light: confirm the free tier's terms of service actually permit the intended research/trading use before this source is wired into a collector — see the open item in [02-data-sources.md](02-data-sources.md#candidate-finnhub-free-news-api-not-yet-integrated).
 
+### Telegram (Gate 0 ops status only) — free bot token, optional
+
+Used only by `scripts/build_daily_report.py` to push the daily operations status (collection counts, Gate 0 progress, integrity check, disk headroom) — never a trading signal, since none exists yet ([STORY-013](../stories/STORY-013-telegram-ops-notification.md)). Fully optional: if unset, the daily report still builds and writes to disk exactly as before, and the entrypoint logs plainly that Telegram is not configured rather than failing.
+
+1. Message [@BotFather](https://core.telegram.org/bots#how-do-i-create-a-bot) on Telegram, run `/newbot`, and follow the prompts to get a bot token.
+2. Start a chat with the new bot (or add it to a group/channel) and find the target chat ID — the simplest way is to send it a message, then call `https://api.telegram.org/bot<token>/getUpdates` and read `message.chat.id` from the response.
+3. Store as `EDGELAB_TELEGRAM_BOT_TOKEN` and `EDGELAB_TELEGRAM_CHAT_ID` in `.env`. Both are required together — either one missing disables notifications entirely (`NotificationConfig.telegram_enabled`), it is never a partial/degraded send.
+
 ### Everything else in the MVP sequence — no credentials needed
 
 yfinance, Stooq, PR Newswire RSS, GlobeNewswire RSS, Business Wire RSS: all public, no sign-up, no key. The entire [MVP story sequence](07-development-workflow.md#suggested-mvp-story-sequence-phase-1) can be built without creating a single account.
