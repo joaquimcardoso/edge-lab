@@ -1,0 +1,12 @@
+[Unit]
+Description=edge-lab: schedule for edgelab-8k-poll.service (Gate 0)
+
+[Timer]
+# docs/04-infrastructure.md: "every 15 min, 08:00 ET-16:30 ET".
+# Timers are defined in America/New_York explicitly, per that doc.
+OnCalendar=Mon..Fri 08:00..16:30/15:00 America/New_York
+Persistent=false
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

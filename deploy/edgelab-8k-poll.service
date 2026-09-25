@@ -1,0 +1,20 @@
+[Unit]
+Description=edge-lab: poll EDGAR 8-K for the Gate 0 measurement universe
+# See docs/04-infrastructure.md -- every service declares this so
+# nothing writes to the SD card when the external disk is missing.
+RequiresMountsFor=/mnt/data
+After=network-online.target mnt-data.mount
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Optional-prefixed ("-"): a missing file must surface as this
+# story's own ConfigError (clear, named) rather than a silent
+# systemd unit failure with no explanation.
+EnvironmentFile=-/etc/edgelab.env
+WorkingDirectory=/opt/edgelab
+ExecStart=/opt/edgelab/.venv/bin/python /opt/edgelab/scripts/collect_premarket_8k.py
+# Staggered against the other Pi jobs per docs/04-infrastructure.md;
+# a single poll should never approach this, it is a safety ceiling.
+MemoryMax=512M
+Nice=5

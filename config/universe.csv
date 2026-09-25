@@ -1,0 +1,12 @@
+# Gate 0 measurement universe -- NOT a trading-strategy universe.
+# Purpose: generate enough 8-K filing volume to measure feed latency
+# (docs/04-infrastructure.md, STORY-007's Gate 0). No price/liquidity
+# filter applies here the way it does for docs/strategies/*.md --
+# review and edit this list before relying on it; it is a placeholder
+# starter set of large, frequent 8-K filers, not a recommendation.
+ticker,cik
+AAPL,320193
+MSFT,789019
+AMZN,1018724
+GOOGL,1652044
+JPM,19617
