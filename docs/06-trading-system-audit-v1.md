@@ -56,3 +56,16 @@ Similarly, "exactly which event types qualify" for Swing reads as open in `swing
 
 - A blanket "minimum 100 trades across 3 regimes" sample floor (one reviewer's suggestion) wasn't applied uniformly — EXP-001 already requires 150, which is stricter; Value's 12-month holding period makes a trade-count floor the wrong unit, so its proposed floor is stated in cohorts instead (24 monthly cohorts / ≥20 holdings per cohort). Each experiment keeps its own frozen number rather than inheriting one lab-wide constant.
 - Specific numeric thresholds one reviewer proposed for Value's leverage/quality gates (e.g. interest coverage > 3.0×) were not inserted into EXP-V01, since EXP-V01 already has its own frozen quality gates (different metric, same intent) and swapping in a different reviewer's numbers post hoc would be exactly the kind of after-the-fact parameter change principle 3 exists to prevent. Noted here as a candidate for a *new* experiment variant, not a retroactive edit.
+
+## Trading-expert review log
+
+One entry per DEPLOYED story, per [Trading Expert Agent](agents/trading-expert-agent.md) — rubric answered before the next story leaves DRAFT.
+
+### STORY-001 — Raw snapshot store (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes. The story's own scope was narrow by design — an immutable, content-addressed, SHA-256-verified, append-only store for one fetch attempt's raw payload, gzip-compressed per [ADR-0006](adr/0006-immutable-raw-snapshots.md). All acceptance criteria in [STORY-001](../stories/STORY-001-raw-snapshot-store.md) are met: empty-payload rejection with no row written, hash-tampering detected on read, identical content at different `retrieved_at` produces two rows sharing one on-disk blob, `first_seen_at` defaults correctly, no update/delete function exists anywhere in the module's public API. 12/12 tests green (10 unit, 2 system); the regression gate is vacuous — no experiment is `FROZEN` yet, so there is nothing to have regressed.
+2. **Does anything here change the next story's priority?** No. Nothing built in this story touches a priority-1/2/3 open item above — it's infrastructure underneath all of them, not a fix to any of them. [STORY-002](../docs/07-development-workflow.md#suggested-mvp-story-sequence-phase-1) (the `edgar_8k` collector) was already next in the MVP sequence and stays next.
+3. **Should the backlog pause rather than continue?** No blocking concern. This story makes no trading-methodology claim to evaluate — it is plumbing, not a strategy or a signal — so there is nothing here for a trading-methodology review to accept or reject in the ACCEPT/REJECT/INCONCLUSIVE sense.
+
+**Decision: PROCEED.** STORY-002 may leave DRAFT.
+
