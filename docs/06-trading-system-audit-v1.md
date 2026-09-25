@@ -85,3 +85,11 @@ One entry per DEPLOYED story, per [Trading Expert Agent](agents/trading-expert-a
 
 **Decision: PROCEED** (to STORY-004), **with a backlog note**: add exchange-calendar handling (trading-day/session-date resolution) as an explicit prerequisite before STORY-005 (feature builder) starts, since STORY-005's rolling-window features and STORY-003's deferred `session_date` need the same dependency.
 
+### STORY-004 — prices_daily collector, normaliser and store (2026-09-25)
+
+1. **Did this feature close what it claimed to?** Yes, with one honestly-recorded weaker guarantee: unlike `edgar_8k`, what this story stores as "raw" is yfinance's own parsed DataFrame (CSV-serialised), not Yahoo's original wire bytes -- reimplementing yfinance's cookie/crumb HTTP handling to capture the true raw response was judged a worse trade than accepting one processing layer's remove. Both raw close and adjusted close are stored as distinct columns, as required. 59/59 tests green (18 new unit, 2 new system, 39 unchanged).
+2. **Does anything here change the next story's priority?** No. Item 4a (exchange-calendar integration, added after STORY-003's review) remains the correct next step before the feature builder (item 5) — `prices_daily` doesn't need it and wasn't expected to.
+3. **Should the backlog pause rather than continue?** No blocking concern. One thing worth flagging for the eventual Pi deployment rather than blocking development now: this story's yfinance dependency has never been exercised against live Yahoo Finance in this sandbox (same open item pattern as STORY-002's SEC EDGAR schema) — compounded by yfinance's own documented fragility (`02-data-sources.md`: real risk of 429 throttling and silent breakage). Both collectors share the same carried-forward pre-deployment verification requirement.
+
+**Decision: PROCEED.** Item 4a (exchange-calendar integration) stays next, ahead of STORY-005 (feature builder), per the STORY-003 review.
+
